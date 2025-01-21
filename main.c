@@ -1,4 +1,4 @@
-//Inclusion de las librerias
+//Inclusion de las librerias TEST
 //-------------------------------------
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
