@@ -7,7 +7,7 @@
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_mixer.h>
 
-
+#include "Include/Headers/Images.h"
 #include "Include/Headers/main.h"
 #include "Include/Math.c"
 #include "Include/Keys.c"
@@ -39,8 +39,8 @@ void MainLoop(){
 
     //Aca iria el codigo para dibujar
 
-    DrawGameSimplyfied();
-
+    //DrawGameSimplyfied();
+    DrawGame();
 
 
     SDL_RenderPresent(renderer); //Terminar de dibujar
@@ -80,7 +80,7 @@ int main (){
     //-------------------------------------------------------
 
     //Aqui hay que cargar los recursos del juego
-    GroundImages = IMG_LoadTexture(renderer, "Resources/Images/Characters/Player.png");
+    GroundImages = IMG_LoadTexture(renderer, "Resources/Images/Grounds.png");
 
 
 
@@ -135,8 +135,19 @@ void DrawGame(){//Este procedimiento dibuja el juego
 
     DrawRectangle(0,0,ResoultionW,ResoultionH,WHITE);
 
+    int Total = 0;
+    for(int x = 0; x < CurrentLevelWidth;x ++){
 
+        for(int y = 0; y < CurrentLevelHeight; y ++){
+            Total ++;
 
+            if(Total % 2 == 0){
+                DrawTexturePro(GroundImages,(Rectangle){0,0,14,7},(Rectangle){(x * IsoUnitDiameter)-(y * IsoUnitDiameter),(x * IsoUnitRadius)+(y * IsoUnitRadius),14,7},0,WHITE);
+            }
+        }
+
+        Total ++;
+    }
 }
 
 //Dibujar parte de una imagen, requiere: una imagen, un rectangulo que representa el area de la imagen que dibujar,
