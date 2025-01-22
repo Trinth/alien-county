@@ -91,7 +91,7 @@ void DrawNPCS(){
         float y = NPCS[i].position.y;
 
 
-        DrawRectangle( ( (x * IsoUnitDiameter)-(y * IsoUnitDiameter)) / 8 - cam.target.x,((x * IsoUnitRadius)+(y * IsoUnitRadius)) / 8 - cam.target.y,
+        DrawRectangle( ( (x * IsoUnitDiameter)-(y * IsoUnitDiameter)) / UnitLenght - cam.target.x,((x * IsoUnitRadius)+(y * IsoUnitRadius)) / UnitLenght - cam.target.y,
                       NPCWIDTH,NPCHEIGHT,BLACK);
     }
 

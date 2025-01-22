@@ -2,6 +2,8 @@
 
 #define CameraSpeed 3
 
+PLAYER player = {0,0,0,0};
+
 void ExecutePlayerLogic(){
 
     //if(AllKeys[SDL_SCANCODE_LEFT])
@@ -42,6 +44,28 @@ void SimpePlayer(){
     else if(AllKeys[SDL_SCANCODE_S].Down){
         NPCS[i].position.y += 1;
     }
+
+
+}
+
+void PlayerLogic(){
+
+    if(AllKeys[SDL_SCANCODE_A].Down){
+        player.position.x -= 1;
+    }
+    else if(AllKeys[SDL_SCANCODE_D].Down){
+        player.position.x += 1;
+    }
+    if(AllKeys[SDL_SCANCODE_W].Down){
+        player.position.y -= 1;
+    }
+    else if(AllKeys[SDL_SCANCODE_S].Down){
+        player.position.y += 1;
+    }
+
+}
+
+void DrawPlayer(){
 
 
 }

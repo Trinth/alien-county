@@ -32,12 +32,21 @@ void MainLoop(){
 
     UpdateKeys(); //Actualizar las teclas
 
-    SimpeCameraMovement();
-    //SimpePlayer();
 
-    ExecuteLogicForAllNPCS();//Ejecutar la logica de los NPCS
+
+
+    //Ejecutar la logica del jugador
+    PlayerLogic();
+
+    //Ejecutar la logica de los NPCS
+    ExecuteLogicForAllNPCS();
+
 
     SDL_RenderClear(renderer); //Comenzar a dibujar
+
+
+
+
 
     //Aca iria el codigo para dibujar
 
@@ -48,6 +57,10 @@ void MainLoop(){
     DrawGame();
 
     SDL_RenderPresent(renderer); //Terminar de dibujar
+
+
+
+
 
 
 
@@ -85,6 +98,7 @@ int main (){
 
     //Aqui hay que cargar los recursos del juego
     GroundImages = IMG_LoadTexture(renderer, "Resources/Images/Grounds.png");
+    PlayerImage = IMG_LoadTexture(renderer, "Resources/Images/Alien.png");
 
 
 
@@ -137,14 +151,13 @@ void DrawGameSimplyfied(){//Este procedimiento dibuja el juego
 
 void DrawGame(){//Este procedimiento dibuja el juego
 
-    //DrawRectangle(0,0,ResoultionW,ResoultionH,WHITE);
-
     int Total = 0;
     for(int x = 0; x < CurrentLevelWidth;x ++){
 
         for(int y = 0; y < CurrentLevelHeight; y ++){
 
             DrawTexturePro(GroundImages,(Rectangle){0,0,14,7},(Rectangle){(x * IsoUnitDiameter)-(y * IsoUnitDiameter),(x * IsoUnitRadius)+(y * IsoUnitRadius),14,7},0,WHITE);
+
         }
 
     }
