@@ -1,6 +1,7 @@
 //Inclusion de las librerias
 //-------------------------------------
 #include <stdbool.h>
+#include <time.h>
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
@@ -11,6 +12,7 @@
 #include "Include/Math.c"
 #include "Include/Keys.c"
 
+#include "Include/NPCS.c"
 
 #ifdef WEB
 //Esto solo se incluye en el codigo si se pone #define WEB antes o si se pone -DWEB en el compilador (Esto es super util para hacer cosas para varias plataformas como windows, linux, web, android, etc) (Tambien se puede utilizar para otras cosas)
@@ -31,13 +33,13 @@ void MainLoop(){
     UpdateKeys(); //Actualizar las teclas
 
 
-
+    ExecuteLogicForAllNPCS();//Ejecutar la logica de los NPCS
 
     SDL_RenderClear(renderer); //Comenzar a dibujar
 
     //Aca iria el codigo para dibujar
 
-    DrawGame();
+    DrawGameSimplyfied();
 
 
 
@@ -59,6 +61,16 @@ void MainLoop(){
 
 int main (){
 
+
+    //Alocar las listas variables aca
+    NPCS = calloc(15,sizeof(NPC));
+
+    //Esto es utilizado para poder generar numeros aleatorios, es de las primeras cosas para generar
+    srand(time(NULL));
+
+    //Esta funcion va a cargar las caracteristicas de los NPCS, por ahora genera valores aleatorios
+    LoadNPCS();
+
 	SDL_CreateWindowAndRenderer(ResoultionW, ResoultionH,0,&win,&renderer); //Esto arranca la ventana
 
     //Esto arracna el audio
@@ -68,6 +80,9 @@ int main (){
     //-------------------------------------------------------
 
     //Aqui hay que cargar los recursos del juego
+    GroundImages = IMG_LoadTexture(renderer, "Resources/Images/Characters/Player.png");
+
+
 
     #ifndef WEB
     while (running) // Esto sigue cuando running es igual a 1
@@ -85,9 +100,41 @@ int main (){
 
 }
 
+void DrawGameSimplyfied(){//Este procedimiento dibuja el juego
+
+    //Esto dibuja el fondo
+    DrawRectangle(0,0,ResoultionW,ResoultionH,WHITE);
+
+
+    //Esto dibuja el suelo
+    int Total = 0;
+    for(int x = 0; x < CurrentLevelWidth;x ++){
+
+        for(int y = 0; y < CurrentLevelHeight; y ++){
+            if(Total % 2 == 0){
+                DrawRectangle((x * UnitLenght) - cam.target.x,(y * UnitLenght) - cam.target.y,UnitLenght,UnitLenght,GREEN);
+            }
+            else{
+                DrawRectangle((x * UnitLenght) - cam.target.x,(y * UnitLenght) - cam.target.y,UnitLenght,UnitLenght,WHITE);
+            }
+            Total ++;
+
+
+        }
+        Total ++;
+    }
+
+    //Esto dibuja el personaje
+    DrawRectangle(0,0,16,16,RED);
+
+    DrawNPCS();
+
+}
+
 void DrawGame(){//Este procedimiento dibuja el juego
 
     DrawRectangle(0,0,ResoultionW,ResoultionH,WHITE);
+
 
 
 }

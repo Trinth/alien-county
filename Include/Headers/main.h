@@ -29,6 +29,15 @@
     int FullScreenOffsetX = 0;
     int FullScreenOffsetY = 0;
 
+
+
+    int CurrentLevelWidth = 50; //Cuantas unidades hay en el eje x
+    int CurrentLevelHeight = 50; //Cuantas unidades hay en el eje y
+
+    int UnitLenght = 8;
+
+
+
     //Defincion de estructuras
     typedef struct Rectangle {
         int x;                // Posicion en x del rectangulo
@@ -58,5 +67,24 @@
 
 
     Camera2D cam; //Defincion de la camara principal
+
+
+    void DrawRectangle(int x, int y, int w, int h, Color color);
+    void DrawTexturePro(SDL_Texture *img, Rectangle Origin, Rectangle Destination, int Rotation, Color color);
+
+
+    const int IsoUnitLenght = 14;
+    const int IsoUnitDiameter = IsoUnitLenght / 2;
+    const int IsoUnitRadius = (IsoUnitDiameter / 2) + (IsoUnitDiameter % 2);
+
+
+
+
+
+
+
+
+
+
 
 #endif
