@@ -23,7 +23,7 @@
     #define ResoultionW 800
     #define ResoultionH 600
 
-    int zoom = 1;
+    int zoom = 2;
 
     //Estas variables son utilizadas para correr la pantalla en pantalla completa
     int FullScreenOffsetX = 0;
@@ -34,7 +34,7 @@
     int CurrentLevelWidth = 50; //Cuantas unidades hay en el eje x
     int CurrentLevelHeight = 50; //Cuantas unidades hay en el eje y
 
-    int UnitLenght = 8;
+    #define UnitLenght 8 //Tamaño de las unidades en la simulación (Modo simple)
 
 
 
@@ -73,11 +73,12 @@
     void DrawTexturePro(SDL_Texture *img, Rectangle Origin, Rectangle Destination, int Rotation, Color color);
 
 
-    const int IsoUnitLenght = 14;
+    const int IsoUnitLenght = 12;
     const int IsoUnitDiameter = IsoUnitLenght / 2;
     const int IsoUnitRadius = (IsoUnitDiameter / 2) + (IsoUnitDiameter % 2);
 
-
+    const float TileToIsoA = 0;
+    const float TileToIsoB = 0;
 
 
 

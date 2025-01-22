@@ -11,8 +11,8 @@
 #include "Include/Headers/main.h"
 #include "Include/Math.c"
 #include "Include/Keys.c"
-
 #include "Include/NPCS.c"
+#include "Include/Player.c"
 
 #ifdef WEB
 //Esto solo se incluye en el codigo si se pone #define WEB antes o si se pone -DWEB en el compilador (Esto es super util para hacer cosas para varias plataformas como windows, linux, web, android, etc) (Tambien se puede utilizar para otras cosas)
@@ -32,6 +32,8 @@ void MainLoop(){
 
     UpdateKeys(); //Actualizar las teclas
 
+    SimpeCameraMovement();
+    //SimpePlayer();
 
     ExecuteLogicForAllNPCS();//Ejecutar la logica de los NPCS
 
@@ -39,9 +41,11 @@ void MainLoop(){
 
     //Aca iria el codigo para dibujar
 
-    //DrawGameSimplyfied();
-    DrawGame();
+    DrawBackGround(WHITE);
 
+    //DrawGameSimplyfied();
+
+    DrawGame();
 
     SDL_RenderPresent(renderer); //Terminar de dibujar
 
@@ -103,7 +107,7 @@ int main (){
 void DrawGameSimplyfied(){//Este procedimiento dibuja el juego
 
     //Esto dibuja el fondo
-    DrawRectangle(0,0,ResoultionW,ResoultionH,WHITE);
+    //DrawRectangle(0,0,ResoultionW,ResoultionH,WHITE);
 
 
     //Esto dibuja el suelo
@@ -127,27 +131,25 @@ void DrawGameSimplyfied(){//Este procedimiento dibuja el juego
     //Esto dibuja el personaje
     DrawRectangle(0,0,16,16,RED);
 
-    DrawNPCS();
+    DrawNPCS_SIMPLE();
 
 }
 
 void DrawGame(){//Este procedimiento dibuja el juego
 
-    DrawRectangle(0,0,ResoultionW,ResoultionH,WHITE);
+    //DrawRectangle(0,0,ResoultionW,ResoultionH,WHITE);
 
     int Total = 0;
     for(int x = 0; x < CurrentLevelWidth;x ++){
 
         for(int y = 0; y < CurrentLevelHeight; y ++){
-            Total ++;
 
-            if(Total % 2 == 0){
-                DrawTexturePro(GroundImages,(Rectangle){0,0,14,7},(Rectangle){(x * IsoUnitDiameter)-(y * IsoUnitDiameter),(x * IsoUnitRadius)+(y * IsoUnitRadius),14,7},0,WHITE);
-            }
+            DrawTexturePro(GroundImages,(Rectangle){0,0,14,7},(Rectangle){(x * IsoUnitDiameter)-(y * IsoUnitDiameter),(x * IsoUnitRadius)+(y * IsoUnitRadius),14,7},0,WHITE);
         }
 
-        Total ++;
     }
+    DrawNPCS();
+
 }
 
 //Dibujar parte de una imagen, requiere: una imagen, un rectangulo que representa el area de la imagen que dibujar,
@@ -203,4 +205,16 @@ void DrawRectangle(int x, int y, int w, int h, Color color){
     SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
     SDL_RenderFillRect(renderer, &rect);
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+}
+
+void DrawBackGround(Color color){
+    DrawRectangle(0,0,ResoultionW,ResoultionH,color);
+}
+
+void CalculateIsometicTransformation(){
+
+
+
+
+
 }

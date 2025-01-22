@@ -19,8 +19,8 @@ void LoadNPCS(){
         NPCS[i].position.x = RandomNum(0, (CurrentLevelWidth * 8)-8);
         NPCS[i].position.y = RandomNum(0, (CurrentLevelHeight * 8)-8);
 
-        NPCS[i].speed.x = RandomNum(1, 4);
-        NPCS[i].speed.y = RandomNum(1, 4);
+        NPCS[i].speed.x = RandomNum(1, 1);
+        NPCS[i].speed.y = RandomNum(1, 1);
 
         switch(RandomNum(0,3)){
             case 1:
@@ -74,8 +74,28 @@ void NPCRandomMovement(int i){
 }
 
 
-void DrawNPCS(){
+void DrawNPCS_SIMPLE(){
     for(int i = 0; i < CurrentNumberOfNPCS; i ++){
-        DrawRectangle(NPCS[i].position.x,NPCS[i].position.y,NPCWIDTH,NPCHEIGHT,BLACK);
+        DrawRectangle(NPCS[i].position.x - cam.target.x,NPCS[i].position.y - cam.target.y,NPCWIDTH,NPCHEIGHT,BLACK);
     }
+}
+
+void DrawNPCS(){
+
+
+
+
+    for(int i = 0; i < CurrentNumberOfNPCS; i ++){
+
+        float x = NPCS[i].position.x;
+        float y = NPCS[i].position.y;
+
+
+        DrawRectangle( ( (x * IsoUnitDiameter)-(y * IsoUnitDiameter)) / 8 - cam.target.x,((x * IsoUnitRadius)+(y * IsoUnitRadius)) / 8 - cam.target.y,
+                      NPCWIDTH,NPCHEIGHT,BLACK);
+    }
+
+
+
+
 }
