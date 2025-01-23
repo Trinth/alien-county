@@ -9,10 +9,8 @@
 
 #include "Include/Headers/Images.h"
 #include "Include/Headers/main.h"
-#include "Include/Math.c"
+
 #include "Include/Keys.c"
-#include "Include/NPCS.c"
-#include "Include/Player.c"
 
 #ifdef WEB
 //Esto solo se incluye en el codigo si se pone #define WEB antes o si se pone -DWEB en el compilador (Esto es super util para hacer cosas para varias plataformas como windows, linux, web, android, etc) (Tambien se puede utilizar para otras cosas)
@@ -35,11 +33,6 @@ void MainLoop(){
 
 
 
-    //Ejecutar la logica del jugador
-    PlayerLogic();
-
-    //Ejecutar la logica de los NPCS
-    ExecuteLogicForAllNPCS();
 
 
     SDL_RenderClear(renderer); //Comenzar a dibujar
@@ -52,9 +45,6 @@ void MainLoop(){
 
     DrawBackGround(WHITE);
 
-    //DrawGameSimplyfied();
-
-    DrawGame();
 
     SDL_RenderPresent(renderer); //Terminar de dibujar
 
@@ -77,16 +67,10 @@ void MainLoop(){
 }
 
 int main (){
-    CalculateIsometicTransformation();
 
-    //Alocar las listas variables aca
-    NPCS = calloc(15,sizeof(NPC));
 
     //Esto es utilizado para poder generar numeros aleatorios, es de las primeras cosas para generar
     srand(time(NULL));
-
-    //Esta funcion va a cargar las caracteristicas de los NPCS, por ahora genera valores aleatorios
-    LoadNPCS();
 
 	SDL_CreateWindowAndRenderer(ResoultionW, ResoultionH,0,&win,&renderer); //Esto arranca la ventana
 
@@ -117,76 +101,6 @@ int main (){
     //A la hora de salir el codigo pasa por aca, se tiene que descargar todos los recursos aqui
 
 }
-
-void DrawGameSimplyfied(){//Este procedimiento dibuja el juego
-
-    //Esto dibuja el fondo
-    //DrawRectangle(0,0,ResoultionW,ResoultionH,WHITE);
-
-
-
-
-
-    //Esto dibuja el suelo
-    int Total = 0;
-    for(int x = 0; x < CurrentLevelWidth;x ++){
-
-        for(int y = 0; y < CurrentLevelHeight; y ++){
-            if(Total % 2 == 0){
-                DrawRectangle((x * UnitLenght) - cam.target.x,(y * UnitLenght) - cam.target.y,UnitLenght,UnitLenght,GREEN);
-            }
-            else{
-                DrawRectangle((x * UnitLenght) - cam.target.x,(y * UnitLenght) - cam.target.y,UnitLenght,UnitLenght,WHITE);
-            }
-            Total ++;
-
-
-        }
-        Total ++;
-    }
-
-    //Esto dibuja el personaje
-    Vector2 CurrentPlayerTile = ToTileCoordinates(player.position.x,player.position.y+15);
-    DrawRectangle((CurrentPlayerTile.x*8)-cam.target.x,(CurrentPlayerTile.y*8)-cam.target.y,8,8,RED);
-
-
-    DrawNPCS_SIMPLE();
-
-}
-
-void DrawGame(){//Este procedimiento dibuja el juego
-
-    Vector2 CurrentPlayerTile = ToTileCoordinates(player.position.x,player.position.y+15);
-
-    int Total = 0;
-    for(int x = 0; x < CurrentLevelWidth;x ++){
-
-        for(int y = 0; y < CurrentLevelHeight; y ++){
-
-
-            Total ++;
-            if(Total % 2 == 0){
-                DrawTexturePro(GroundImages,(Rectangle){0,0,14,7},(Rectangle){(x * IsoUnitDiameter)-(y * IsoUnitDiameter),(x * IsoUnitRadius)+(y * IsoUnitRadius),14,7},0,WHITE);
-            }
-            else{
-                DrawTexturePro(GroundImages,(Rectangle){0,0,14,7},(Rectangle){(x * IsoUnitDiameter)-(y * IsoUnitDiameter),(x * IsoUnitRadius)+(y * IsoUnitRadius),14,7},0,BLUE);
-            }
-
-            if(CurrentPlayerTile.x == x && CurrentPlayerTile.y == y){
-                DrawTexturePro(GroundImages,(Rectangle){0,0,14,7},(Rectangle){(x * IsoUnitDiameter)-(y * IsoUnitDiameter),(x * IsoUnitRadius)+(y * IsoUnitRadius),14,7},0,RED);
-            }
-        }
-        Total++;
-
-    }
-        //Dibujar la sombra del jugador, esta puesto aca para que aparezca antes que los NPC y los edificios / arboles / etc
-    DrawTexturePro(PlayerImage,(Rectangle){45,10,15,10},(Rectangle){player.position.x,player.position.y+10,15,10},0,WHITE);
-
-
-    DrawNPCS();
-    DrawPlayer();
-}
-
 
 
 
@@ -249,27 +163,6 @@ void DrawBackGround(Color color){
     DrawRectangle(0,0,ResoultionW,ResoultionH,color);
 }
 
-void CalculateIsometicTransformation(){
-
-double a = 0.5f * 12;
-double b = -0.5f * 12;
-double c = 0.25f * 12;
-double d = 0.25f * 12;
-
-const double det = (1 / (a * d - b * c));
-
-IsoToTileA = det * d;
-IsoToTileB = det * -b;
-IsoToTileC = det * -c;
-IsoToTileD = det * a;
-
-
-
-}
-
-Vector2 ToTileCoordinates(int x, int y){
-    return (Vector2){ ( (x * IsoToTileA) + (y * IsoToTileB)),( (x * IsoToTileC) + (y * IsoToTileD)) };
-}
 
 bool CheckCollisionRecs(Rectangle REC1,Rectangle REC2){
 
