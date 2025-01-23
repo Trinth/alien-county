@@ -15,15 +15,14 @@
 
 
 
-
+    //Variables cruciales no especificas
+    //--------------------------------------------------------------------------
     int running = 1;//Esta variable controla si el juego sigue siendo ejecutado
-    SDL_Renderer *renderer = NULL; //Esta variable almacena es para dibujar cosas en las ventanas
-    SDL_Window *win = NULL; //Esta variable alamacena la ventana
 
-    #define ResoultionW 800
-    #define ResoultionH 600
+    //--------------------------------------------------------------------------
 
-    int zoom = 2;
+
+
 
     //Estas variables son utilizadas para correr la pantalla en pantalla completa
     int FullScreenOffsetX = 0;
@@ -31,10 +30,10 @@
 
 
 
-    int CurrentLevelWidth = 50; //Cuantas unidades hay en el eje x
-    int CurrentLevelHeight = 50; //Cuantas unidades hay en el eje y
+    int CurrentLevelWidth = 50; //Cuantas unidades hay en el eje x en el nivel actual
+    int CurrentLevelHeight = 50; //Cuantas unidades hay en el eje y en el nivel actual
 
-    #define UnitLenght 8 //Tamaño de las unidades en la simulación (Modo simple)
+    #define UnitLenght 8 //Tamaño de las unidades en la simulación (Modo simple) Utilizado para convertir la posicion de los NPC de a perspectiva isometrica y para la simulación de los NPCS
 
 
 
@@ -51,6 +50,16 @@
         int y;
     } Vector2;
 
+    //Funciones y estructuras utilizadas para renderizar
+    //---------------------------------------------------------------------------
+
+    int zoom = 3; //Que tanto zoom tiene la pantalla
+
+    SDL_Renderer *renderer = NULL; //Esta variable almacena es para dibujar cosas en las ventanas
+    SDL_Window *win = NULL; //Esta variable alamacena la ventana
+
+    #define ResoultionW 800 //Ancho de la ventana deseada
+    #define ResoultionH 600 //Alto de la ventana deseada
 
     typedef struct Color {
         unsigned char r;        // Color red value
@@ -71,21 +80,32 @@
 
     void DrawRectangle(int x, int y, int w, int h, Color color);
     void DrawTexturePro(SDL_Texture *img, Rectangle Origin, Rectangle Destination, int Rotation, Color color);
+    //---------------------------------------------------------------------------
 
 
+    //Caracteristicas de una unidad isometrica
+    //---------------------------------------------------------------------------
     const int IsoUnitLenght = 12;
     const int IsoUnitDiameter = IsoUnitLenght / 2;
     const int IsoUnitRadius = (IsoUnitDiameter / 2) + (IsoUnitDiameter % 2);
-
-    const float TileToIsoA = 0;
-    const float TileToIsoB = 0;
+    //---------------------------------------------------------------------------
 
 
 
+    //Valores para conversion isometrica (Por ejemplo: Esto es utilizado para saber donde esta el jugador en el mapa)
+    //---------------------------------------------------------------------------
+
+        double IsoToTileA ;
+        double IsoToTileB ;
+        double IsoToTileC ;
+        double IsoToTileD ;
+
+        Vector2 ToTileCoordinates(int x, int y);
+    //-------------------------------------------------------------------------
 
 
 
-
+    bool CheckCollisionRecs(Rectangle REC1,Rectangle REC2);
 
 
 #endif

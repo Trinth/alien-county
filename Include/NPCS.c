@@ -4,6 +4,9 @@
 #define NPCWIDTH 8
 #define NPCHEIGHT 8
 
+#define MaxZ_Speed 2.0f
+#define Gravity 0.05f
+
 NPC *NPCS;
 
 int CurrentNumberOfNPCS = 15;
@@ -36,6 +39,7 @@ void LoadNPCS(){
 
         }
 
+        NPCS[i].Z = 0;
     }
 
 }
@@ -50,8 +54,18 @@ void ExecuteLogicForAllNPCS(){
 }
 
 void ExecuteLogicForNPC(int i){
+
+
     //TODO: Crear mas tipos de comportamientos para los NPC
-    NPCRandomMovement(i);
+
+    if(NPCS[i].BeingAdbucted == false && NPCS[i].Z == 0){
+         NPCRandomMovement(i);
+    }
+    else{
+        NPCAbduction_Gravity(i);
+    }
+
+
 
 }
 
@@ -73,6 +87,26 @@ void NPCRandomMovement(int i){
     NPCS[i].position.y += NPCS[i].speed.y;
 }
 
+void NPCAbduction_Gravity(int i){
+
+    if(NPCS[i].BeingAdbucted == false){
+        NPCS[i].SpeedZ += Gravity;
+
+        if(NPCS[i].SpeedZ > MaxZ_Speed){
+            NPCS[i].SpeedZ = MaxZ_Speed;
+        }
+    }
+
+    NPCS[i].Z += NPCS[i].SpeedZ;
+
+    if(NPCS[i].Z > 0){
+        NPCS[i].Z = 0.0f;
+    }
+}
+
+
+
+
 
 void DrawNPCS_SIMPLE(){
     for(int i = 0; i < CurrentNumberOfNPCS; i ++){
@@ -80,10 +114,8 @@ void DrawNPCS_SIMPLE(){
     }
 }
 
+//Esta funcion dibuja los NPCS en el modo isometrico
 void DrawNPCS(){
-
-
-
 
     for(int i = 0; i < CurrentNumberOfNPCS; i ++){
 
@@ -91,11 +123,9 @@ void DrawNPCS(){
         float y = NPCS[i].position.y;
 
 
-        DrawRectangle( ( (x * IsoUnitDiameter)-(y * IsoUnitDiameter)) / UnitLenght - cam.target.x,((x * IsoUnitRadius)+(y * IsoUnitRadius)) / UnitLenght - cam.target.y,
+        DrawRectangle( ((x * IsoUnitDiameter)-(y * IsoUnitDiameter)) / UnitLenght - cam.target.x,
+                      (((x * IsoUnitRadius)+(y * IsoUnitRadius)) / UnitLenght - cam.target.y) + (int)NPCS[i].Z,
                       NPCWIDTH,NPCHEIGHT,BLACK);
     }
-
-
-
 
 }

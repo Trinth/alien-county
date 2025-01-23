@@ -77,7 +77,7 @@ void MainLoop(){
 }
 
 int main (){
-
+    CalculateIsometicTransformation();
 
     //Alocar las listas variables aca
     NPCS = calloc(15,sizeof(NPC));
@@ -124,6 +124,9 @@ void DrawGameSimplyfied(){//Este procedimiento dibuja el juego
     //DrawRectangle(0,0,ResoultionW,ResoultionH,WHITE);
 
 
+
+
+
     //Esto dibuja el suelo
     int Total = 0;
     for(int x = 0; x < CurrentLevelWidth;x ++){
@@ -143,7 +146,9 @@ void DrawGameSimplyfied(){//Este procedimiento dibuja el juego
     }
 
     //Esto dibuja el personaje
-    DrawRectangle(0,0,16,16,RED);
+    Vector2 CurrentPlayerTile = ToTileCoordinates(player.position.x,player.position.y+15);
+    DrawRectangle((CurrentPlayerTile.x*8)-cam.target.x,(CurrentPlayerTile.y*8)-cam.target.y,8,8,RED);
+
 
     DrawNPCS_SIMPLE();
 
@@ -151,19 +156,30 @@ void DrawGameSimplyfied(){//Este procedimiento dibuja el juego
 
 void DrawGame(){//Este procedimiento dibuja el juego
 
+    Vector2 CurrentPlayerTile = ToTileCoordinates(player.position.x,player.position.y+15);
+
     int Total = 0;
     for(int x = 0; x < CurrentLevelWidth;x ++){
 
         for(int y = 0; y < CurrentLevelHeight; y ++){
 
             DrawTexturePro(GroundImages,(Rectangle){0,0,14,7},(Rectangle){(x * IsoUnitDiameter)-(y * IsoUnitDiameter),(x * IsoUnitRadius)+(y * IsoUnitRadius),14,7},0,WHITE);
-
+            if(CurrentPlayerTile.x == x && CurrentPlayerTile.y == y){
+                DrawTexturePro(GroundImages,(Rectangle){0,0,14,7},(Rectangle){(x * IsoUnitDiameter)-(y * IsoUnitDiameter),(x * IsoUnitRadius)+(y * IsoUnitRadius),14,7},0,RED);
+            }
         }
 
     }
-    DrawNPCS();
+        //Dibujar la sombra del jugador, esta puesto aca para que aparezca antes que los NPC y los edificios / arboles / etc
+    DrawTexturePro(PlayerImage,(Rectangle){45,10,15,10},(Rectangle){player.position.x,player.position.y+10,15,10},0,WHITE);
 
+
+    DrawNPCS();
+    DrawPlayer();
 }
+
+
+
 
 //Dibujar parte de una imagen, requiere: una imagen, un rectangulo que representa el area de la imagen que dibujar,
 //otro rectangulo para dibujar donde dibujar esa parte de la imagen, la rotacion y el color de la imagen.
@@ -226,8 +242,33 @@ void DrawBackGround(Color color){
 
 void CalculateIsometicTransformation(){
 
+double a = 0.5f * 12;
+double b = -0.5f * 12;
+double c = 0.25f * 12;
+double d = 0.25f * 12;
 
+const double det = (1 / (a * d - b * c));
+
+IsoToTileA = det * d;
+IsoToTileB = det * -b;
+IsoToTileC = det * -c;
+IsoToTileD = det * a;
 
 
 
 }
+
+Vector2 ToTileCoordinates(int x, int y){
+    return (Vector2){ ( (x * IsoToTileA) + (y * IsoToTileB)),( (x * IsoToTileC) + (y * IsoToTileD)) };
+}
+
+bool CheckCollisionRecs(Rectangle REC1,Rectangle REC2){
+
+    bool collision = false;
+
+    if ((REC1.x < (REC2.x + REC2.width) && (REC1.x + REC1.width) > REC2.x) &&
+        (REC1.y < (REC2.y + REC2.height) && (REC1.y + REC1.height) > REC2.y)) collision = true;
+
+    return collision;
+}
+
