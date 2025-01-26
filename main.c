@@ -47,7 +47,7 @@ void MainLoop(){
 
 
 
-    DrawUI();
+    //DrawUI();
 
 
     //Aca iria el codigo para dibujar

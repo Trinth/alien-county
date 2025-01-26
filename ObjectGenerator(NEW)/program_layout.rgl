@@ -1,0 +1,20 @@
+#
+# rgl layout text file (v4.0) - raygui layout file generated using rGuiLayout
+#
+# Number of controls:     10
+#
+# Ref. window:    r <x> <y> <width> <height>
+# Anchor info:    a <id> <name> <posx> <posy> <enabled>
+# Control info:   c <id> <type> <name> <rectangle> <anchor_id> <text>
+#
+r 0 40 -1 -1
+c 000 15 Largo_en_X 560 56 120 24 0 Largo en X
+c 001 15 Largo_en_Y 560 88 120 24 0 Largo en Y
+c 002 15 Colision_en_X 560 168 120 24 0 Colision en X
+c 003 15 Colision_en_Y 560 200 120 24 0 Colision en Y
+c 004 5 Boton_guardar 560 368 120 24 0 Guardar
+c 005 19 Nombre_del_objeto 560 8 120 24 0 Objeto
+c 006 5 Equalizar 560 128 120 24 0 Equalizar
+c 007 5 Button007 560 336 120 24 0 Ver objetos
+c 008 15 Img_off_X 560 256 120 24 0 Divergencia en X
+c 009 15 Img_off_Y 560 288 120 24 0 Divergencia en Y
