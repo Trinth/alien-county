@@ -43,6 +43,8 @@ const int IsoUnitRadius = (IsoUnitDiameter / 2) + (IsoUnitDiameter % 2);
 Texture2D UnitTextures;
 Texture2D texture;
 
+Texture2D Icons;
+
 Image SaveImage;
 
 
@@ -68,13 +70,27 @@ int Img_off_YValue = 0;
 bool TransparenciaChecked = false;
 //----------------------------------------------------------------------------------
 
+typedef struct Object{
+int Largo_en_X;
+int Largo_en_Y;
 
-//xclip -se c -t image/png -o > out.png
+int Colision_en_X;
+int Colision_en_Y;
+
+int Img_off_X;
+int Img_off_Y;
+}Object;
+//Lista variable para los objetos
+Object* objects;
 
 
-//----------------------------------------------------------------------------------
-// Controls Functions Declaration
-//----------------------------------------------------------------------------------
+
+int CurrentMode = 0;
+//0 = Editing mode
+//1 = Object viewing / selection mode
+
+#define Icon_Rows 10
+#define IconSize 32
 
 
 //------------------------------------------------------------------------------------
@@ -83,8 +99,7 @@ bool TransparenciaChecked = false;
 int main()
 {
 
-
-   // SaveCurrentObject(10101);
+    objects = calloc(1,sizeof(Object));
 
     // Initialization
     //---------------------------------------------------------------------------------------
@@ -115,11 +130,12 @@ int main()
 
 
     UnitTextures = LoadTexture("Recursos/Grounds.png");
+    Icons = LoadTexture("Objetos/Icons/Icons.png");
 
 
-    GenerateIcons();
+    //GenerateIcons();
 
-
+    LoadObject(0);
     // Main game loop
     while (!WindowShouldClose())    // Detect window close button or ESC key
     {
@@ -127,9 +143,7 @@ int main()
         //----------------------------------------------------------------------------------
         // TODO: Implement required update logic
 
-        Execute_button_logic();
 
-        Execute_Other_Logic();
 
         //----------------------------------------------------------------------------------
 
@@ -141,11 +155,24 @@ int main()
 
             ClearBackground(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
 
-            Draw_Tools_Editing_Mode();
+             switch(CurrentMode){
+                    case 0:
+                        Execute_button_logic();
 
-            BeginMode2D(camera);
-                DrawUnits();
-            EndMode2D();
+                        Execute_Other_Logic();
+
+                        Draw_Tools_Editing_Mode();
+
+                        BeginMode2D(camera);
+                            DrawUnits();
+                        EndMode2D();
+                        break;
+                    case 1:
+
+                        DrawBlockSelector();
+
+                        break;
+            }
 
 
 
@@ -172,6 +199,10 @@ int main()
 // Controls Functions Definitions (local)
 //------------------------------------------------------------------------------------
 
+
+void DrawBlockSelector(){
+    DrawTexturePro(Icons,(Rectangle){0,0,Icons.width,Icons.height},(Rectangle){0,0,Icons.width,Icons.height},(Vector2){0,0},0,WHITE);
+}
 
 void Draw_Tools_Editing_Mode(){
         // raygui: controls drawing
@@ -201,7 +232,11 @@ void Execute_button_logic(){
         SaveNewObject();
     }
     if(Ver_Objetos_Pressed == true){
-        LoadObject(0);
+        Ver_Objetos_Pressed = false;
+        CurrentMode = 1;
+        UnloadTexture(Icons);
+        GenerateIcons();
+        Icons = LoadTexture("Objetos/Icons/Icons.png");
     }
 }
 
@@ -284,33 +319,44 @@ void GenerateIcons(){
     unsigned char* name = Return_Object_Image_Name(0);
 
     int NumberOfObjects = Return_number_of_objects();
-    for(int i = 0; i < NumberOfObjects; i++ ){
 
-        //Cargar el nombre de la imagen
+    Texture2D* textures = calloc(NumberOfObjects, sizeof(Texture2D));
+
+    RenderTexture2D target = LoadRenderTexture(Icon_Rows * IconSize, IconSize * ((NumberOfObjects / Icon_Rows) + 1) );
+
+    int x = 0;
+    int y = 0;
+
+    for(int i = 0; i < NumberOfObjects; i++ ){
+         //Cargar el nombre de la imagen
         //------------------------------------------------
         name = Return_Object_Image_Name(i);
-        texture = LoadTexture(name);
-        //------------------------------------------------
-
-        //Renderizar el icono en 32 * 32
-        //------------------------------------------------
-        RenderTexture2D target = LoadRenderTexture(32, 32);
-        BeginTextureMode(target);
-            DrawTexturePro(texture,(Rectangle){0,0,texture.width,texture.height},(Rectangle){0,0,32,32},(Vector2){0,0,0,0},0,WHITE);
-        EndTextureMode();
-        //------------------------------------------------
-
-        //Crear la imagen para guardar y guardarla
-        //------------------------------------------------
-        SaveImage = LoadImageFromTexture(target.texture);
-
-        ImageFlipVertical(&SaveImage);
-
-        ExportImage(SaveImage,Return_Object_Icon_Name(i));
-        //------------------------------------------------
-
-
+        textures[i] = LoadTexture(name);
     }
+
+    //Renderizar el icono en 32 * 32
+    //------------------------------------------------
+    BeginTextureMode(target);
+        for(int i = 0; i < NumberOfObjects; i++ ){
+            DrawTexturePro(textures[i],(Rectangle){0,0,textures[i].width,textures[i].height},(Rectangle){x*IconSize,y*IconSize,IconSize,IconSize},(Vector2){0,0},0,WHITE);
+            x++;
+            if(x >= Icon_Rows){
+                x = 0;
+                y ++;
+            }
+        }
+    EndTextureMode();
+    //------------------------------------------------
+
+     //Crear la imagen para guardar y guardarla
+    //------------------------------------------------
+    SaveImage = LoadImageFromTexture(target.texture);
+
+    ImageFlipVertical(&SaveImage);
+
+    ExportImage(SaveImage,"Objetos/Icons/Icons.png");
+    //------------------------------------------------
+
 
 }
 
