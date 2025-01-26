@@ -26,9 +26,12 @@ unsigned char* Return_inverse_array(int number);
 
 unsigned char* Return_array(int number);
 
+
 unsigned char* Return_Object_Name (int object);
 
 unsigned char* Return_Object_Image_Name (int object);
+
+unsigned char* Return_Object_Icon_Name (int object);
 
 //Caracteristicas de una unidad isometrica
 //---------------------------------------------------------------------------
@@ -41,6 +44,7 @@ Texture2D UnitTextures;
 Texture2D texture;
 
 Image SaveImage;
+
 
 Camera2D camera = { 0 };
 
@@ -113,6 +117,7 @@ int main()
     UnitTextures = LoadTexture("Recursos/Grounds.png");
 
 
+    GenerateIcons();
 
 
     // Main game loop
@@ -151,10 +156,14 @@ int main()
         //----------------------------------------------------------------------------------
     }
 
+
+
     // De-Initialization
     //--------------------------------------------------------------------------------------
     CloseWindow();        // Close window and OpenGL context
     //--------------------------------------------------------------------------------------
+
+
 
     return 0;
 }
@@ -189,7 +198,7 @@ void Execute_button_logic(){
     }
 
     if(Boton_guardarPressed == true){
-        SaveCurrentObject(0);
+        SaveNewObject();
     }
     if(Ver_Objetos_Pressed == true){
         LoadObject(0);
@@ -270,7 +279,40 @@ void DrawUnits(){
 
 
 
+void GenerateIcons(){
 
+    unsigned char* name = Return_Object_Image_Name(0);
+
+    int NumberOfObjects = Return_number_of_objects();
+    for(int i = 0; i < NumberOfObjects; i++ ){
+
+        //Cargar el nombre de la imagen
+        //------------------------------------------------
+        name = Return_Object_Image_Name(i);
+        texture = LoadTexture(name);
+        //------------------------------------------------
+
+        //Renderizar el icono en 32 * 32
+        //------------------------------------------------
+        RenderTexture2D target = LoadRenderTexture(32, 32);
+        BeginTextureMode(target);
+            DrawTexturePro(texture,(Rectangle){0,0,texture.width,texture.height},(Rectangle){0,0,32,32},(Vector2){0,0,0,0},0,WHITE);
+        EndTextureMode();
+        //------------------------------------------------
+
+        //Crear la imagen para guardar y guardarla
+        //------------------------------------------------
+        SaveImage = LoadImageFromTexture(target.texture);
+
+        ImageFlipVertical(&SaveImage);
+
+        ExportImage(SaveImage,Return_Object_Icon_Name(i));
+        //------------------------------------------------
+
+
+    }
+
+}
 
 void CenterImage(){
 
@@ -279,7 +321,42 @@ void CenterImage(){
 
 }
 
+//Makes a new object file
+void SaveNewObject(){
 
+    int object = Return_number_of_objects();
+
+    FILE *fp;
+
+    unsigned char* name = Return_Object_Name(object);
+
+    fp = fopen(name,"wb");
+
+    Add_number_to_file(Largo_en_XValue,fp);
+    Add_number_to_file(Largo_en_YValue,fp);
+
+    Add_number_to_file(Colision_en_XValue,fp);
+    Add_number_to_file(Colision_en_YValue,fp);
+
+    Add_number_to_file(Img_off_XValue,fp);
+    Add_number_to_file(Img_off_YValue,fp);
+
+
+    fclose(fp);
+
+    free(name);
+
+
+    name = NULL;
+
+    SaveImage = LoadImageFromTexture(texture);
+
+    name = Return_Object_Image_Name(object);
+
+    ExportImage(SaveImage, name);
+}
+
+//Save an object file specifically
 void SaveCurrentObject(int object){
 
     FILE *fp;
@@ -380,7 +457,6 @@ unsigned char* Return_inverse_array(int number){
 
     return array;
 }
-
 unsigned char* Return_array(int number){
 
     const int NumberOfDigits = ReturnNumberOfDigits(number);
@@ -402,6 +478,20 @@ unsigned char* Return_array(int number){
     array = NULL;
     return array2;
 }
+
+
+int Return_number_of_objects(){
+
+    int Number = 0;
+
+
+    while(FileExists(Return_Object_Name(Number))){
+        Number++;
+    }
+
+    return Number;
+}
+
 
 unsigned char* Return_Object_Name (int object){
 
@@ -452,7 +542,7 @@ unsigned char* Return_Object_Icon_Name (int object){
     unsigned char* array = Return_inverse_array(object);
 
     for(int e = 0; e <= NumberOfDigits; e++){
-       name[e+18] = array[NumberOfDigits - e - 1];
+       name[e+17] = array[NumberOfDigits - e - 1];
     }
 
     strcat(name,".png");
@@ -460,6 +550,9 @@ unsigned char* Return_Object_Icon_Name (int object){
     return name;
 
 }
+
+
+
 
 
 
