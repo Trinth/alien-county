@@ -63,6 +63,7 @@ int Colision_en_YValue = 3;
 bool Boton_guardarPressed = false;
 bool EqualizarPressed = false;
 bool Ver_Objetos_Pressed = false;
+bool SobreEscribr_Pressed = false;
 bool Img_off_XEditMode = false;
 int Img_off_XValue = 0;
 bool Img_off_YEditMode = false;
@@ -79,11 +80,13 @@ int Colision_en_Y;
 
 int Img_off_X;
 int Img_off_Y;
+
+Texture2D texture;
+
+Rectangle position;
 }Object;
 //Lista variable para los objetos
-Object* objects;
-
-
+Object* Allobjects;
 
 int CurrentMode = 0;
 //0 = Editing mode
@@ -93,28 +96,25 @@ int CurrentMode = 0;
 #define IconSize 32
 
 
+
+int CurrentlySelectedObject = 0;
+
+int AmountOfObjects = 0;
+
 //------------------------------------------------------------------------------------
 // Program main entry point
 //------------------------------------------------------------------------------------
 int main()
 {
 
-    objects = calloc(1,sizeof(Object));
+
 
     // Initialization
     //---------------------------------------------------------------------------------------
     int screenWidth = 800;
-    int screenHeight = 450;
+    int screenHeight = 550;
 
     InitWindow(screenWidth, screenHeight, "layout_name");
-
-
-
-    //system("xclip -se c -t image/png -o > out.png");
-
-    //texture = LoadTexture("out.png");
-
-
 
 
     SetTargetFPS(60);
@@ -132,10 +132,13 @@ int main()
     UnitTextures = LoadTexture("Recursos/Grounds.png");
     Icons = LoadTexture("Objetos/Icons/Icons.png");
 
+    Allobjects = calloc(1,sizeof(Object));
+    LoadAllObjects();
+
 
     //GenerateIcons();
 
-    LoadObject(0);
+    //LoadObject(0);
     // Main game loop
     while (!WindowShouldClose())    // Detect window close button or ESC key
     {
@@ -161,11 +164,16 @@ int main()
 
                         Execute_Other_Logic();
 
-                        Draw_Tools_Editing_Mode();
 
                         BeginMode2D(camera);
                             DrawUnits();
                         EndMode2D();
+
+                        Draw_Tools_Editing_Mode();
+
+                        DrawText(TextFormat("Amount of objects: %d", AmountOfObjects), 0, 0, 20, RED);
+                        DrawText(TextFormat("Currently selected object: %d", CurrentlySelectedObject), 0, 30, 20, RED);
+
                         break;
                     case 1:
 
@@ -183,6 +191,7 @@ int main()
         //----------------------------------------------------------------------------------
     }
 
+    SaveAllObjects();
 
 
     // De-Initialization
@@ -215,6 +224,7 @@ void Draw_Tools_Editing_Mode(){
         GuiStatusBar((Rectangle){ 660, 8, 120, 24 }, "Objeto");
         EqualizarPressed = GuiButton((Rectangle){ 660, 128, 120, 24 }, "Equalizar");
         Ver_Objetos_Pressed = GuiButton((Rectangle){ 660, 336, 120, 24 }, "Ver objetos");
+        SobreEscribr_Pressed = GuiButton((Rectangle){ 660, 432, 120, 24 }, "Sobre escribr");
         if (GuiSpinner((Rectangle){ 660, 256, 120, 24 }, "Divergencia en X", &Img_off_XValue, -100, 100, Img_off_XEditMode)) Img_off_XEditMode = !Img_off_XEditMode;
         if (GuiSpinner((Rectangle){ 660, 288, 120, 24 }, "Divergencia en Y", &Img_off_YValue, -100, 100, Img_off_YEditMode)) Img_off_YEditMode = !Img_off_YEditMode;
 
@@ -229,7 +239,14 @@ void Execute_button_logic(){
     }
 
     if(Boton_guardarPressed == true){
-        SaveNewObject();
+        //SaveNewObject();
+        //Object object;
+        Object object = {Largo_en_XValue,Largo_en_YValue,Colision_en_XValue,Colision_en_YValue,Img_off_XValue,Img_off_YValue};
+        object.texture = texture;
+
+        AddObject(object);
+
+        CurrentlySelectedObject = AmountOfObjects;
     }
     if(Ver_Objetos_Pressed == true){
         Ver_Objetos_Pressed = false;
@@ -246,6 +263,29 @@ void Execute_Other_Logic(){
         texture = LoadTexture("out.png");
         CenterImage();
     }
+
+
+    if(IsKeyPressed(KEY_Q) == true){
+        CurrentlySelectedObject--;
+        if(CurrentlySelectedObject < 0){
+            CurrentlySelectedObject = 0;
+        }
+        else{
+            UpdateCurrentObject();
+        }
+    }
+    else if(IsKeyPressed(KEY_W) == true){
+        CurrentlySelectedObject++;
+        if(CurrentlySelectedObject > AmountOfObjects){
+            CurrentlySelectedObject = AmountOfObjects;
+        }
+        else{
+            UpdateCurrentObject();
+        }
+    }
+
+
+
 
 }
 
@@ -368,7 +408,7 @@ void CenterImage(){
 }
 
 //Makes a new object file
-void SaveNewObject(){
+/*void SaveNewObject(){
 
     int object = Return_number_of_objects();
 
@@ -400,10 +440,10 @@ void SaveNewObject(){
     name = Return_Object_Image_Name(object);
 
     ExportImage(SaveImage, name);
-}
+}*/
 
 //Save an object file specifically
-void SaveCurrentObject(int object){
+/*void SaveCurrentObject(int object){
 
     FILE *fp;
 
@@ -434,8 +474,186 @@ void SaveCurrentObject(int object){
 
     ExportImage(SaveImage, name);
 
+}*/
+
+
+
+
+void UpdateCurrentObject(){
+
+    Largo_en_XValue = Allobjects[CurrentlySelectedObject].Largo_en_X;
+    Largo_en_YValue = Allobjects[CurrentlySelectedObject].Largo_en_Y;
+
+    Colision_en_XValue = Allobjects[CurrentlySelectedObject].Colision_en_X;
+    Colision_en_YValue = Allobjects[CurrentlySelectedObject].Colision_en_Y;
+
+    Img_off_XValue = Allobjects[CurrentlySelectedObject].Img_off_X;
+    Img_off_YValue = Allobjects[CurrentlySelectedObject].Img_off_Y;
+
+    texture = Allobjects[CurrentlySelectedObject].texture;
+
 }
 
+
+
+
+
+
+void LoadAllObjects(){
+    if(FileExists("Objetos/All.obt")){
+
+        FILE* fp = fopen("Objetos/All.obt","rb");
+
+        int NumberOfObjects = getw(fp);
+
+        Allobjects = realloc(Allobjects,sizeof(Object)*NumberOfObjects);
+
+        for(int i = 0; i < NumberOfObjects; i++ ){
+
+            Allobjects[i].Largo_en_X = getw(fp);
+            Allobjects[i].Largo_en_Y = getw(fp);
+
+            Allobjects[i].Colision_en_X = getw(fp);
+            Allobjects[i].Colision_en_Y = getw(fp);
+
+            Allobjects[i].Img_off_X = getw(fp);
+            Allobjects[i].Img_off_Y = getw(fp);
+
+            Allobjects[i].position.x = getw(fp);
+            Allobjects[i].position.y = getw(fp);
+            Allobjects[i].position.width = getw(fp);
+            Allobjects[i].position.height = getw(fp);
+
+        }
+
+
+        unsigned char* name = Return_Object_Image_Name(0);
+
+
+        for(int i = 0; i < NumberOfObjects; i++ ){
+            //Cargar el nombre de la imagen
+            //------------------------------------------------
+            name = Return_Object_Image_Name(i);
+            Allobjects[i].texture = LoadTexture(name);
+
+        }
+
+        AmountOfObjects = NumberOfObjects;
+
+    }
+    else{
+       // running = 0;
+        Allobjects[0] = (Object){3,3,3,3,0,0};
+    }
+
+}
+
+void SaveAllObjects(){
+
+    //AmountOfObjects = AmountOfObjects - 2;
+    //Create and save the singular blocks image
+    //-------------------------------------------------------------------------------
+
+        //unsigned char* name = Return_Object_Image_Name(0);
+
+        //int NumberOfObjects = Return_number_of_objects();
+
+        Texture2D* textures = calloc(AmountOfObjects, sizeof(Texture2D));
+        Object* objects = calloc(AmountOfObjects,sizeof(Object));
+
+
+        int x = 0;
+
+        int BiggestHeight = 0;
+        int TotalWidth = 0;
+
+        for(int i = 0; i < AmountOfObjects; i++ ){
+            //Cargar el nombre de la imagen
+            //------------------------------------------------
+            //name = Return_Object_Image_Name(i);
+            textures[i] = Allobjects[i].texture;
+
+            objects[i].position.x = TotalWidth;
+            objects[i].position.x = 0;
+            objects[i].position.width = textures[i].width;
+            objects[i].position.height = textures[i].height;
+
+            TotalWidth += textures[i].width;
+
+            if(textures[i].height > BiggestHeight){
+                BiggestHeight = textures[i].height;
+            }
+
+
+            //LoadObject(i);
+
+            objects[i].Largo_en_X = Allobjects[i].Largo_en_X;
+            objects[i].Largo_en_Y = Allobjects[i].Largo_en_Y;
+
+            objects[i].Colision_en_X = Allobjects[i].Colision_en_X;
+            objects[i].Colision_en_Y = Allobjects[i].Colision_en_Y;
+
+            objects[i].Img_off_X = Allobjects[i].Img_off_X;
+            objects[i].Img_off_Y = Allobjects[i].Img_off_Y;
+        }
+
+
+        RenderTexture2D target = LoadRenderTexture(TotalWidth,BiggestHeight);
+
+        //------------------------------------------------
+        BeginTextureMode(target);
+            for(int i = 0; i < AmountOfObjects; i++ ){
+                DrawTexturePro(textures[i],(Rectangle){0,0,textures[i].width,textures[i].height},(Rectangle){x,0,textures[i].width,textures[i].height},(Vector2){0,0},0,WHITE);
+                x += textures[i].width;
+            }
+        EndTextureMode();
+        //------------------------------------------------
+
+
+        //Crear la imagen para guardar y guardarla
+        //------------------------------------------------
+        SaveImage = LoadImageFromTexture(target.texture);
+
+        ImageFlipVertical(&SaveImage);
+
+        ExportImage(SaveImage,"Objetos/Images/All.png");
+        //------------------------------------------------
+
+    //-------------------------------------------------------------------------------
+
+    //Save the tile values and the image position / size
+
+    FILE* fp = fopen("Objetos/All.obt","wb");
+
+    putw(AmountOfObjects,fp);
+
+    for(int i = 0; i < AmountOfObjects; i++ ){
+
+        putw(objects[i].Largo_en_X,fp);
+        putw(objects[i].Largo_en_Y,fp);
+
+        putw(objects[i].Colision_en_X,fp);
+        putw(objects[i].Colision_en_Y,fp);
+
+        putw(objects[i].Img_off_X,fp);
+        putw(objects[i].Img_off_Y,fp);
+
+
+        putw(objects[i].position.x,fp);
+        putw(objects[i].position.y,fp);
+        putw(objects[i].position.width,fp);
+        putw(objects[i].position.height,fp);
+
+
+    }
+
+    fclose(fp);
+
+
+
+}
+
+/*
 void LoadObject(int object){
 
     FILE *fp;
@@ -460,14 +678,12 @@ void LoadObject(int object){
 
     name = NULL;
 
-   // SaveImage = LoadImageFromTexture(texture);
-
     name = Return_Object_Image_Name(object);
 
-    //ExportImage(SaveImage, name);
     texture = LoadTexture(name);
 
 }
+*/
 
 void Add_number_to_file(int number,FILE *fp){
     #ifdef SAVENUMBERASTEXT
@@ -597,6 +813,21 @@ unsigned char* Return_Object_Icon_Name (int object){
 
 }
 
+
+//Appends a new object to the end of the list
+void AddObject(Object object){
+
+    AmountOfObjects++;
+
+    Allobjects = realloc(Allobjects,sizeof(Object)*(AmountOfObjects + 1));
+
+    Allobjects[AmountOfObjects] = object;
+}
+
+//Removes the chosen object and rearenges the list
+void RemoveObject(int object){
+
+}
 
 
 
