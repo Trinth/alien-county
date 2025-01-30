@@ -69,21 +69,23 @@ int Img_off_XValue = 0;
 bool Img_off_YEditMode = false;
 int Img_off_YValue = 0;
 bool TransparenciaChecked = false;
+bool PegarPressed = false;
+
 //----------------------------------------------------------------------------------
 
 typedef struct Object{
-int Largo_en_X;
-int Largo_en_Y;
+    int Largo_en_X;
+    int Largo_en_Y;
 
-int Colision_en_X;
-int Colision_en_Y;
+    int Colision_en_X;
+    int Colision_en_Y;
 
-int Img_off_X;
-int Img_off_Y;
+    int Img_off_X;
+    int Img_off_Y;
 
-Texture2D texture;
+    Texture2D texture;
 
-Rectangle position;
+    Rectangle position;
 }Object;
 //Lista variable para los objetos
 Object* Allobjects;
@@ -98,8 +100,26 @@ int CurrentMode = 0;
 
 
 int CurrentlySelectedObject = 0;
+bool CurrentlySelectedObjectEditMode = false;
 
-int AmountOfObjects = 0;
+int LastSelectedObject = 0;
+
+int AmountOfObjects = 1;
+
+
+int MouseX = 0;
+int MouseY = 0;
+
+
+int MovedObject = -1;
+
+bool RightClicking = false;
+bool EditorSelectorPressed = false;
+bool MoverSelectorPressed = false;
+bool EliminarSelectorPressed = false;
+
+Vector2 RightClickPosition;
+
 
 //------------------------------------------------------------------------------------
 // Program main entry point
@@ -114,8 +134,7 @@ int main()
     int screenWidth = 800;
     int screenHeight = 550;
 
-    InitWindow(screenWidth, screenHeight, "layout_name");
-
+    InitWindow(screenWidth, screenHeight, "Editor de objetos");
 
     SetTargetFPS(60);
     //--------------------------------------------------------------------------------------
@@ -130,9 +149,11 @@ int main()
 
 
     UnitTextures = LoadTexture("Recursos/Grounds.png");
-    Icons = LoadTexture("Objetos/Icons/Icons.png");
+   // Icons = LoadTexture("Objetos/Icons/Icons.png");
 
     Allobjects = calloc(1,sizeof(Object));
+    //Allobjects[0].texture = calloc(1,sizeof(Texture2D));
+
     LoadAllObjects();
 
 
@@ -171,12 +192,13 @@ int main()
 
                         Draw_Tools_Editing_Mode();
 
-                        DrawText(TextFormat("Amount of objects: %d", AmountOfObjects), 0, 0, 20, RED);
-                        DrawText(TextFormat("Currently selected object: %d", CurrentlySelectedObject), 0, 30, 20, RED);
+                        //DrawText(TextFormat("Amount of objects: %d", AmountOfObjects), 0, 0, 20, RED);
+                        //DrawText(TextFormat("Currently selected object: %d", CurrentlySelectedObject), 0, 30, 20, RED);
 
                         break;
                     case 1:
 
+                        BlockSelectorLogic();
                         DrawBlockSelector();
 
                         break;
@@ -210,25 +232,149 @@ int main()
 
 
 void DrawBlockSelector(){
-    DrawTexturePro(Icons,(Rectangle){0,0,Icons.width,Icons.height},(Rectangle){0,0,Icons.width,Icons.height},(Vector2){0,0},0,WHITE);
+    int MaxY = (AmountOfObjects / Icon_Rows) + 1;
+
+    //int CurrentDrawObject = 0;
+
+    for(int y = 0; y < MaxY; y ++){
+
+        for(int x = 0; x < Icon_Rows; x ++){
+            DrawTexturePro(Icons,(Rectangle){x * 32,y * 32,32,32},(Rectangle){x * 32,y*32,32,32},(Vector2){0,0},0,WHITE);
+        }
+    }
+
+    if(MovedObject == -1){
+        DrawRectangle(MouseX*32,MouseY*32,32,32,(Color){255,0,0,100});
+    }
+    else{
+        DrawRectangle(MouseX*32,MouseY*32,32,32,(Color){0,0,255,100});
+    }
+
+    if(RightClicking == true){
+        EditorSelectorPressed = GuiButton((Rectangle){ RightClickPosition.x, RightClickPosition.y, 120, 24 }, "Editar");
+        MoverSelectorPressed = GuiButton((Rectangle){ RightClickPosition.x, RightClickPosition.y + 32, 120, 24 }, "Mover");
+        EliminarSelectorPressed = GuiButton((Rectangle){ RightClickPosition.x, RightClickPosition.y + 64, 120, 24 }, "Eliminar");
+    }
+
+
+}
+
+void BlockSelectorLogic(){
+
+
+    Vector2 MousePos = GetMousePosition();
+
+
+    if(RightClicking == false){
+        MouseX = truncate(((int)(MousePos.x) / 32),0,Icon_Rows-1);
+        MouseY = truncate(((int)(MousePos.y) / 32),0,((AmountOfObjects / Icon_Rows)));
+    }
+
+
+    if(EliminarSelectorPressed == true){
+        int Object = (MouseY * Icon_Rows) + MouseX;
+
+        RemoveObject(Object);
+
+        EliminarSelectorPressed = false;
+
+        RightClicking = false;
+    }
+
+    if(MoverSelectorPressed == true){
+        MovedObject = (MouseY * Icon_Rows) + MouseX;
+
+        MoverSelectorPressed = false;
+
+        RightClicking = false;
+    }
+
+
+    if(EditorSelectorPressed == true){
+        EditorSelectorPressed = false;
+        RightClicking = false;
+        CurrentlySelectedObject = (MouseY * Icon_Rows) + MouseX;
+        UpdateCurrentObject();
+        CurrentMode = 0;
+    }
+
+
+    if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && MovedObject != -1){
+        int CurrentObject = (MouseY * Icon_Rows) + MouseX;
+
+        if(CurrentObject < AmountOfObjects){
+            Object obj = Allobjects[CurrentObject];
+
+            Allobjects[CurrentObject] = Allobjects[MovedObject];
+
+            Allobjects[MovedObject] = obj;
+
+            UnloadTexture(Icons);
+            GenerateIcons();
+            Icons = LoadTexture("Objetos/Icons/Icons.png");
+
+            MovedObject = -1;
+        }
+    }
+
+    if(IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) && RightClicking == false && MovedObject == -1){
+        int CurrentObject = (MouseY * Icon_Rows) + MouseX;
+
+        if(CurrentObject < AmountOfObjects){
+            RightClicking = true;
+
+            RightClickPosition = MousePos;
+        }
+
+    }
+
 }
 
 void Draw_Tools_Editing_Mode(){
         // raygui: controls drawing
         //----------------------------------------------------------------------------------
-        if (GuiSpinner((Rectangle){ 660, 56, 120, 24 }, "Largo en X", &Largo_en_XValue, 1, 50, Largo_en_XEditMode)) Largo_en_XEditMode = !Largo_en_XEditMode;
-        if (GuiSpinner((Rectangle){ 660, 88, 120, 24 }, "Largo en Y", &Largo_en_YValue, 1, 50, Largo_en_YEditMode)) Largo_en_YEditMode = !Largo_en_YEditMode;
-        if (GuiSpinner((Rectangle){ 660, 168, 120, 24 }, "Colision en X", &Colision_en_XValue, 1, 50, Colision_en_XEditMode)) Colision_en_XEditMode = !Colision_en_XEditMode;
-        if (GuiSpinner((Rectangle){ 660, 200, 120, 24 }, "Colision en Y", &Colision_en_YValue, 1, 50, Colision_en_YEditMode)) Colision_en_YEditMode = !Colision_en_YEditMode;
-        Boton_guardarPressed = GuiButton((Rectangle){ 660, 368, 120, 24 }, "Guardar");
-        GuiStatusBar((Rectangle){ 660, 8, 120, 24 }, "Objeto");
+        GuiStatusBar((Rectangle){ 660, 8, 120, 24 }, TextFormat("Objeto: %d | Total %d", CurrentlySelectedObject,AmountOfObjects));
+
+
+
+        if (GuiSpinner((Rectangle){ 660, 56, 120, 24 }, "Largo en X", &Largo_en_XValue, 1, 10, Largo_en_XEditMode)) Largo_en_XEditMode = !Largo_en_XEditMode;
+        if (GuiSpinner((Rectangle){ 660, 88, 120, 24 }, "Largo en Y", &Largo_en_YValue, 1, 10, Largo_en_YEditMode)) Largo_en_YEditMode = !Largo_en_YEditMode;
+
+
         EqualizarPressed = GuiButton((Rectangle){ 660, 128, 120, 24 }, "Equalizar");
-        Ver_Objetos_Pressed = GuiButton((Rectangle){ 660, 336, 120, 24 }, "Ver objetos");
-        SobreEscribr_Pressed = GuiButton((Rectangle){ 660, 432, 120, 24 }, "Sobre escribr");
+
+
+        if (GuiSpinner((Rectangle){ 660, 168, 120, 24 }, "Colision en X", &Colision_en_XValue, 0, 10, Colision_en_XEditMode)) Colision_en_XEditMode = !Colision_en_XEditMode;
+        if (GuiSpinner((Rectangle){ 660, 200, 120, 24 }, "Colision en Y", &Colision_en_YValue, 0, 10, Colision_en_YEditMode)) Colision_en_YEditMode = !Colision_en_YEditMode;
+
+
         if (GuiSpinner((Rectangle){ 660, 256, 120, 24 }, "Divergencia en X", &Img_off_XValue, -100, 100, Img_off_XEditMode)) Img_off_XEditMode = !Img_off_XEditMode;
         if (GuiSpinner((Rectangle){ 660, 288, 120, 24 }, "Divergencia en Y", &Img_off_YValue, -100, 100, Img_off_YEditMode)) Img_off_YEditMode = !Img_off_YEditMode;
 
-        GuiCheckBox((Rectangle){ 660, 400, 24, 24 }, "Transparencia", &TransparenciaChecked);
+
+        GuiCheckBox((Rectangle){ 660, 336, 24, 24 }, "Transparencia", &TransparenciaChecked);
+        Boton_guardarPressed = GuiButton((Rectangle){ 660, 368, 120, 24 }, "Nuevo objeto");
+        SobreEscribr_Pressed = GuiButton((Rectangle){ 660, 400, 120, 24 }, "Hacer copia");
+
+        Ver_Objetos_Pressed = GuiButton((Rectangle){ 660, 432, 120, 24 }, "Ver objetos");
+
+        if (GuiSpinner((Rectangle){ 660, 464, 120, 24 }, "Objeto selecionado", &CurrentlySelectedObject, 0, AmountOfObjects-1, CurrentlySelectedObjectEditMode)) {
+            CurrentlySelectedObjectEditMode = !CurrentlySelectedObjectEditMode;
+        }
+
+        PegarPressed = GuiButton((Rectangle){ 660, 496, 120, 24 }, "Pegar imagen");
+
+
+
+
+        if(CurrentlySelectedObject != LastSelectedObject){
+            UpdateCurrentObject();
+        }
+
+        LastSelectedObject = CurrentlySelectedObject;
+
+
+
         //----------------------------------------------------------------------------------
 }
 
@@ -239,14 +385,14 @@ void Execute_button_logic(){
     }
 
     if(Boton_guardarPressed == true){
-        //SaveNewObject();
-        //Object object;
-        Object object = {Largo_en_XValue,Largo_en_YValue,Colision_en_XValue,Colision_en_YValue,Img_off_XValue,Img_off_YValue};
-        object.texture = texture;
+        Object object = {3,3,3,3,0,0};
+        object.texture = LoadTexture("NULL.png");
 
         AddObject(object);
 
-        CurrentlySelectedObject = AmountOfObjects;
+        CurrentlySelectedObject = AmountOfObjects-1;
+
+        UpdateCurrentObject();
     }
     if(Ver_Objetos_Pressed == true){
         Ver_Objetos_Pressed = false;
@@ -255,13 +401,34 @@ void Execute_button_logic(){
         GenerateIcons();
         Icons = LoadTexture("Objetos/Icons/Icons.png");
     }
+    if(SobreEscribr_Pressed == true){
+        Object object = Allobjects[CurrentlySelectedObject];
+        //object.texture = LoadTexture("NULL.png");
+        SobreEscribr_Pressed = false;
+
+        AddObject(object);
+
+        CurrentlySelectedObject = AmountOfObjects-1;
+
+        UpdateCurrentObject();
+
+    }
+
 }
 
 void Execute_Other_Logic(){
-    if(IsKeyPressed(KEY_V) == true){
+
+    if(IsKeyPressed(KEY_V) == true || PegarPressed == true){
+        PegarPressed = false;
+        system("rm out.png");
         system("xclip -se c -t image/png -o > out.png");
-        texture = LoadTexture("out.png");
-        CenterImage();
+
+        UnloadTexture(Allobjects[CurrentlySelectedObject].texture);
+
+        if(FileExists("out.png")){
+            Allobjects[CurrentlySelectedObject].texture = LoadTexture("out.png");
+        }
+
     }
 
 
@@ -276,17 +443,15 @@ void Execute_Other_Logic(){
     }
     else if(IsKeyPressed(KEY_W) == true){
         CurrentlySelectedObject++;
-        if(CurrentlySelectedObject > AmountOfObjects){
-            CurrentlySelectedObject = AmountOfObjects;
+        if(CurrentlySelectedObject > AmountOfObjects-1){
+            CurrentlySelectedObject = AmountOfObjects-1;
         }
         else{
             UpdateCurrentObject();
         }
     }
 
-
-
-
+    UpdateObject();
 }
 
 void DrawUnits(){
@@ -342,11 +507,14 @@ void DrawUnits(){
 
     //Dibujar el objeto
     if(TransparenciaChecked == false){
-            DrawTexture(texture,Img_off_XValue,Img_off_YValue,WHITE);
+            DrawTexture(Allobjects[CurrentlySelectedObject].texture,Img_off_XValue,Img_off_YValue,WHITE);
     }
     else{
-            DrawTexture(texture,Img_off_XValue,Img_off_YValue,(Color){255,255,255,100});
+            DrawTexture(Allobjects[CurrentlySelectedObject].texture,Img_off_XValue,Img_off_YValue,(Color){255,255,255,100});
     }
+    /*Texture2D TEST = Allobjects[CurrentlySelectedObject].texture;
+    DrawTexture(TEST,0,0,RED);*/
+
 
 
 }
@@ -356,29 +524,21 @@ void DrawUnits(){
 
 void GenerateIcons(){
 
-    unsigned char* name = Return_Object_Image_Name(0);
+    //unsigned char* name = Return_Object_Image_Name(0);
 
-    int NumberOfObjects = Return_number_of_objects();
-
-    Texture2D* textures = calloc(NumberOfObjects, sizeof(Texture2D));
+    int NumberOfObjects = AmountOfObjects;
 
     RenderTexture2D target = LoadRenderTexture(Icon_Rows * IconSize, IconSize * ((NumberOfObjects / Icon_Rows) + 1) );
 
     int x = 0;
     int y = 0;
 
-    for(int i = 0; i < NumberOfObjects; i++ ){
-         //Cargar el nombre de la imagen
-        //------------------------------------------------
-        name = Return_Object_Image_Name(i);
-        textures[i] = LoadTexture(name);
-    }
 
     //Renderizar el icono en 32 * 32
     //------------------------------------------------
     BeginTextureMode(target);
         for(int i = 0; i < NumberOfObjects; i++ ){
-            DrawTexturePro(textures[i],(Rectangle){0,0,textures[i].width,textures[i].height},(Rectangle){x*IconSize,y*IconSize,IconSize,IconSize},(Vector2){0,0},0,WHITE);
+            DrawTexturePro(Allobjects[i].texture,(Rectangle){0,0,Allobjects[i].position.width,Allobjects[i].position.height},(Rectangle){x*IconSize,y*IconSize,IconSize,IconSize},(Vector2){0,0},0,WHITE);
             x++;
             if(x >= Icon_Rows){
                 x = 0;
@@ -407,75 +567,6 @@ void CenterImage(){
 
 }
 
-//Makes a new object file
-/*void SaveNewObject(){
-
-    int object = Return_number_of_objects();
-
-    FILE *fp;
-
-    unsigned char* name = Return_Object_Name(object);
-
-    fp = fopen(name,"wb");
-
-    Add_number_to_file(Largo_en_XValue,fp);
-    Add_number_to_file(Largo_en_YValue,fp);
-
-    Add_number_to_file(Colision_en_XValue,fp);
-    Add_number_to_file(Colision_en_YValue,fp);
-
-    Add_number_to_file(Img_off_XValue,fp);
-    Add_number_to_file(Img_off_YValue,fp);
-
-
-    fclose(fp);
-
-    free(name);
-
-
-    name = NULL;
-
-    SaveImage = LoadImageFromTexture(texture);
-
-    name = Return_Object_Image_Name(object);
-
-    ExportImage(SaveImage, name);
-}*/
-
-//Save an object file specifically
-/*void SaveCurrentObject(int object){
-
-    FILE *fp;
-
-    unsigned char* name = Return_Object_Name(object);
-
-    fp = fopen(name,"wb");
-
-    Add_number_to_file(Largo_en_XValue,fp);
-    Add_number_to_file(Largo_en_YValue,fp);
-
-    Add_number_to_file(Colision_en_XValue,fp);
-    Add_number_to_file(Colision_en_YValue,fp);
-
-    Add_number_to_file(Img_off_XValue,fp);
-    Add_number_to_file(Img_off_YValue,fp);
-
-
-    fclose(fp);
-
-    free(name);
-
-
-    name = NULL;
-
-    SaveImage = LoadImageFromTexture(texture);
-
-    name = Return_Object_Image_Name(object);
-
-    ExportImage(SaveImage, name);
-
-}*/
-
 
 
 
@@ -494,12 +585,23 @@ void UpdateCurrentObject(){
 
 }
 
+void UpdateObject(){
+    Allobjects[CurrentlySelectedObject].Largo_en_X = Largo_en_XValue;
+    Allobjects[CurrentlySelectedObject].Largo_en_Y = Largo_en_YValue;
 
+    Allobjects[CurrentlySelectedObject].Colision_en_X = Colision_en_XValue;
+    Allobjects[CurrentlySelectedObject].Colision_en_Y = Colision_en_YValue;
+
+    Allobjects[CurrentlySelectedObject].Img_off_X = Img_off_XValue;
+    Allobjects[CurrentlySelectedObject].Img_off_Y = Img_off_YValue;
+
+}
 
 
 
 
 void LoadAllObjects(){
+    printf("Loading\n");
     if(FileExists("Objetos/All.obt")){
 
         FILE* fp = fopen("Objetos/All.obt","rb");
@@ -524,17 +626,38 @@ void LoadAllObjects(){
             Allobjects[i].position.width = getw(fp);
             Allobjects[i].position.height = getw(fp);
 
+
+
         }
 
 
-        unsigned char* name = Return_Object_Image_Name(0);
 
+
+        Image TexturesBuffer = LoadImage("Objetos/Images/All.png");
+
+        //ImageFlipVertical(&TexturesBuffer);
+
+        Texture2D AllTextures = LoadTextureFromImage(TexturesBuffer);
+
+        int x = 0;
 
         for(int i = 0; i < NumberOfObjects; i++ ){
-            //Cargar el nombre de la imagen
-            //------------------------------------------------
-            name = Return_Object_Image_Name(i);
-            Allobjects[i].texture = LoadTexture(name);
+
+            printf("Rendering texture with size W: %f H:%f\n",Allobjects[i].position.width,Allobjects[i].position.height);
+            printf("And position X: %f Y:%f\n",Allobjects[i].position.x,Allobjects[i].position.y);
+            RenderTexture2D target = LoadRenderTexture(Allobjects[i].position.width,Allobjects[i].position.height);
+
+            BeginTextureMode(target);
+                    DrawTexturePro(AllTextures,(Rectangle){x,0,Allobjects[i].position.width,Allobjects[i].position.height},
+                                               (Rectangle){0,0,Allobjects[i].position.width,Allobjects[i].position.height},(Vector2){0,0},0,WHITE);
+                    x += Allobjects[i].position.width;
+            EndTextureMode();
+
+            Image buffer = LoadImageFromTexture(target.texture);
+
+            ImageFlipVertical(&buffer);
+
+            Allobjects[i].texture = LoadTextureFromImage(buffer);
 
         }
 
@@ -542,23 +665,21 @@ void LoadAllObjects(){
 
     }
     else{
-       // running = 0;
         Allobjects[0] = (Object){3,3,3,3,0,0};
+        Allobjects[0].position = (Rectangle){0,0,0,0};
+        Allobjects[0].texture = LoadTexture("NULL.png");
+        printf("HELP\n\n\n\n");
     }
+
+    UpdateCurrentObject();
 
 }
 
 void SaveAllObjects(){
 
-    //AmountOfObjects = AmountOfObjects - 2;
     //Create and save the singular blocks image
     //-------------------------------------------------------------------------------
 
-        //unsigned char* name = Return_Object_Image_Name(0);
-
-        //int NumberOfObjects = Return_number_of_objects();
-
-        Texture2D* textures = calloc(AmountOfObjects, sizeof(Texture2D));
         Object* objects = calloc(AmountOfObjects,sizeof(Object));
 
 
@@ -568,33 +689,27 @@ void SaveAllObjects(){
         int TotalWidth = 0;
 
         for(int i = 0; i < AmountOfObjects; i++ ){
+
+
             //Cargar el nombre de la imagen
             //------------------------------------------------
             //name = Return_Object_Image_Name(i);
-            textures[i] = Allobjects[i].texture;
+            Texture2D tex = Allobjects[i].texture;
 
-            objects[i].position.x = TotalWidth;
-            objects[i].position.x = 0;
-            objects[i].position.width = textures[i].width;
-            objects[i].position.height = textures[i].height;
 
-            TotalWidth += textures[i].width;
+            Allobjects[i].position.x = TotalWidth;
+            Allobjects[i].position.y = 0;
+            Allobjects[i].position.width = tex.width;
+            Allobjects[i].position.height = tex.height;
 
-            if(textures[i].height > BiggestHeight){
-                BiggestHeight = textures[i].height;
+            TotalWidth += tex.width;
+
+            if(tex.height > BiggestHeight){
+                BiggestHeight = tex.height;
             }
 
 
-            //LoadObject(i);
-
-            objects[i].Largo_en_X = Allobjects[i].Largo_en_X;
-            objects[i].Largo_en_Y = Allobjects[i].Largo_en_Y;
-
-            objects[i].Colision_en_X = Allobjects[i].Colision_en_X;
-            objects[i].Colision_en_Y = Allobjects[i].Colision_en_Y;
-
-            objects[i].Img_off_X = Allobjects[i].Img_off_X;
-            objects[i].Img_off_Y = Allobjects[i].Img_off_Y;
+            objects[i] = Allobjects[i];
         }
 
 
@@ -603,8 +718,11 @@ void SaveAllObjects(){
         //------------------------------------------------
         BeginTextureMode(target);
             for(int i = 0; i < AmountOfObjects; i++ ){
-                DrawTexturePro(textures[i],(Rectangle){0,0,textures[i].width,textures[i].height},(Rectangle){x,0,textures[i].width,textures[i].height},(Vector2){0,0},0,WHITE);
-                x += textures[i].width;
+                //Texture2D tex = Allobjects[i].texture;
+
+                DrawTexturePro(Allobjects[i].texture,(Rectangle){0,0,Allobjects[i].texture.width,Allobjects[i].texture.height},
+                               (Rectangle){x,0,Allobjects[i].texture.width,Allobjects[i].texture.height},(Vector2){0,0},0,WHITE);
+                x += Allobjects[i].texture.width;
             }
         EndTextureMode();
         //------------------------------------------------
@@ -612,11 +730,11 @@ void SaveAllObjects(){
 
         //Crear la imagen para guardar y guardarla
         //------------------------------------------------
-        SaveImage = LoadImageFromTexture(target.texture);
+        Image image = LoadImageFromTexture(target.texture);
 
-        ImageFlipVertical(&SaveImage);
+        ImageFlipVertical(&image);
 
-        ExportImage(SaveImage,"Objetos/Images/All.png");
+        ExportImage(image,"Objetos/Images/All.png");
         //------------------------------------------------
 
     //-------------------------------------------------------------------------------
@@ -629,20 +747,20 @@ void SaveAllObjects(){
 
     for(int i = 0; i < AmountOfObjects; i++ ){
 
-        putw(objects[i].Largo_en_X,fp);
-        putw(objects[i].Largo_en_Y,fp);
+        putw(Allobjects[i].Largo_en_X,fp);
+        putw(Allobjects[i].Largo_en_Y,fp);
 
-        putw(objects[i].Colision_en_X,fp);
-        putw(objects[i].Colision_en_Y,fp);
+        putw(Allobjects[i].Colision_en_X,fp);
+        putw(Allobjects[i].Colision_en_Y,fp);
 
-        putw(objects[i].Img_off_X,fp);
-        putw(objects[i].Img_off_Y,fp);
+        putw(Allobjects[i].Img_off_X,fp);
+        putw(Allobjects[i].Img_off_Y,fp);
 
 
-        putw(objects[i].position.x,fp);
-        putw(objects[i].position.y,fp);
-        putw(objects[i].position.width,fp);
-        putw(objects[i].position.height,fp);
+        putw(Allobjects[i].position.x,fp);
+        putw(Allobjects[i].position.y,fp);
+        putw(Allobjects[i].position.width,fp);
+        putw(Allobjects[i].position.height,fp);
 
 
     }
@@ -652,58 +770,6 @@ void SaveAllObjects(){
 
 
 }
-
-/*
-void LoadObject(int object){
-
-    FILE *fp;
-
-    unsigned char* name = Return_Object_Name(object);
-
-    fp = fopen(name,"rb");
-
-    Largo_en_XValue = getw(fp);
-    Largo_en_YValue = getw(fp);
-
-    Colision_en_XValue = getw(fp);
-    Colision_en_YValue = getw(fp);
-
-    Img_off_XValue = getw(fp);
-    Img_off_YValue = getw(fp);
-
-    fclose(fp);
-
-    free(name);
-
-
-    name = NULL;
-
-    name = Return_Object_Image_Name(object);
-
-    texture = LoadTexture(name);
-
-}
-*/
-
-void Add_number_to_file(int number,FILE *fp){
-    #ifdef SAVENUMBERASTEXT
-        unsigned char* array = Return_array(number);
-
-        for(int i = 0; i < ReturnNumberOfDigits(number) ;i++){
-            putc(array[i],fp);
-        }
-
-        putc('\n',fp);
-
-        free(array);
-        array = NULL;
-
-    #else
-        putw(number,fp);
-    #endif
-
-}
-
 
 unsigned char* Return_inverse_array(int number){
 
@@ -742,77 +808,6 @@ unsigned char* Return_array(int number){
 }
 
 
-int Return_number_of_objects(){
-
-    int Number = 0;
-
-
-    while(FileExists(Return_Object_Name(Number))){
-        Number++;
-    }
-
-    return Number;
-}
-
-
-unsigned char* Return_Object_Name (int object){
-
-    unsigned char* name = calloc(45,sizeof(unsigned char));
-
-    strcat(name,"Objetos/obj");
-
-    const int NumberOfDigits = ReturnNumberOfDigits(object);
-
-    unsigned char* array = Return_inverse_array(object);
-
-    for(int e = 0; e <= NumberOfDigits; e++){
-       name[e+11] = array[NumberOfDigits - e - 1];
-    }
-
-    strcat(name,".obt");
-
-    return name;
-
-}
-unsigned char* Return_Object_Image_Name (int object){
-
-    unsigned char* name = calloc(45,sizeof(unsigned char));
-
-    strcat(name,"Objetos/Images/obj");
-
-    const int NumberOfDigits = ReturnNumberOfDigits(object);
-
-    unsigned char* array = Return_inverse_array(object);
-
-    for(int e = 0; e <= NumberOfDigits; e++){
-       name[e+18] = array[NumberOfDigits - e - 1];
-    }
-
-    strcat(name,".png");
-
-    return name;
-
-}
-unsigned char* Return_Object_Icon_Name (int object){
-
-    unsigned char* name = calloc(45,sizeof(unsigned char));
-
-    strcat(name,"Objetos/Icons/obj");
-
-    const int NumberOfDigits = ReturnNumberOfDigits(object);
-
-    unsigned char* array = Return_inverse_array(object);
-
-    for(int e = 0; e <= NumberOfDigits; e++){
-       name[e+17] = array[NumberOfDigits - e - 1];
-    }
-
-    strcat(name,".png");
-
-    return name;
-
-}
-
 
 //Appends a new object to the end of the list
 void AddObject(Object object){
@@ -821,11 +816,26 @@ void AddObject(Object object){
 
     Allobjects = realloc(Allobjects,sizeof(Object)*(AmountOfObjects + 1));
 
-    Allobjects[AmountOfObjects] = object;
+    Allobjects[AmountOfObjects-1] = object;
+
+    Allobjects[AmountOfObjects-1].texture = object.texture;
 }
 
 //Removes the chosen object and rearenges the list
 void RemoveObject(int object){
+    //AmountOfObjects--;
+    if(object < AmountOfObjects && object >= 0){
+        for(int i = object; i < AmountOfObjects; i++){
+            Allobjects[i] = Allobjects[i+1];
+        }
+
+        AmountOfObjects --;
+
+        UnloadTexture(Icons);
+        GenerateIcons();
+        Icons = LoadTexture("Objetos/Icons/Icons.png");
+    }
+
 
 }
 
@@ -849,4 +859,16 @@ int AbsoluteInteger(int x){
         return x * -1;
     }
     return x;
+}
+int truncate(int num, int min, int max){
+
+    if(num < min){
+        return min;
+    }
+    else if(num > max){
+        return max;
+    }
+
+    return num;
+
 }
